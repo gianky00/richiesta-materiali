@@ -5,11 +5,14 @@ import sqlite3
 import os
 import sys
 import subprocess
-from src.database import get_connection
+from src.database import get_connection, init_db
 from src.utils import logger
 
 class RDAApp:
     def __init__(self, root):
+        # Ensure DB table exists to avoid crash
+        init_db()
+
         self.root = root
         self.root.title("RDA Viewer")
         self.root.geometry("1200x600")
@@ -38,16 +41,16 @@ class RDAApp:
         )
         self.tree = ttk.Treeview(table_frame, columns=columns, show="headings")
 
-        # Define Headings
+        # Define Headings (Updated to match User's terms)
         self.tree.heading("rda_number", text="N° RDA")
-        self.tree.heading("commessa", text="Commessa")
+        self.tree.heading("commessa", text="Articolo") # Was Commessa
         self.tree.heading("desc_materiale", text="Descrizione Materiale")
-        self.tree.heading("unita", text="U.M.")
-        self.tree.heading("qty", text="Q.tà")
+        self.tree.heading("unita", text="UM")
+        self.tree.heading("qty", text="Quantita Richiesta")
         self.tree.heading("apf", text="APF")
         self.tree.heading("data_rda", text="Data RDA")
-        self.tree.heading("data_consegna", text="Consegna")
-        self.tree.heading("alert", text="Alert")
+        self.tree.heading("data_consegna", text="Data di Consegna")
+        self.tree.heading("alert", text="N° Alert")
         self.tree.heading("richiedente", text="Richiedente")
 
         # Define Column Widths
