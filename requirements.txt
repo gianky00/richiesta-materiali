@@ -10,9 +10,13 @@ pdfplumber>=0.10.0
 # Licenza e Aggiornamenti
 requests>=2.25.0
 cryptography>=3.4.0
+packaging>=23.0
 
 # Build System (Nuitka)
 nuitka>=2.0
 zstandard>=0.22.0
 ordered-set>=4.1.0
-pywin32
+
+# Testing
+pytest
+pytest-mock
