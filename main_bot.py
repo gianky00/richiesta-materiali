@@ -27,6 +27,10 @@ from src.pdf_parser import extract_rda_data, save_pdf_to_archive
 from src.database import init_db, replace_all_data
 from src.utils import logger
 
+# Moduli Licenza
+import license_updater
+import license_validator
+
 
 def process_pdf_callback(excel_mgr):
     """
@@ -76,7 +80,25 @@ def main():
     logger.info("=" * 50)
     logger.info("Avvio RDA Bot...")
     logger.info("=" * 50)
-    
+
+    # -------------------------------------------------------------------------
+    # CHECK LICENZA
+    # -------------------------------------------------------------------------
+    try:
+        logger.info("Aggiornamento licenza...")
+        license_updater.run_update()
+
+        is_valid, msg = license_validator.verify_license()
+        if not is_valid:
+            logger.critical(f"LICENZA NON VALIDA: {msg}")
+            print(f"FATAL ERROR: {msg}", file=sys.stderr)
+            return 1
+
+        logger.info(f"Licenza OK: {msg}")
+    except Exception as e:
+        logger.error(f"Errore controllo licenza: {e}")
+        return 1
+
     # 1. Inizializza database SQLite
     try:
         init_db()

@@ -14,6 +14,11 @@ from datetime import datetime, timedelta
 from collections import Counter
 import re
 
+# Moduli Licenza e Aggiornamento
+import app_updater
+import license_updater
+import license_validator
+
 # Percorsi configurazione
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -1245,6 +1250,39 @@ def main():
     """Entry point dell'applicazione"""
     root = tk.Tk()
     
+    # -------------------------------------------------------------------------
+    # 1. CONTROLLO AGGIORNAMENTI APP
+    # -------------------------------------------------------------------------
+    try:
+        app_updater.check_for_updates(silent=True)
+    except Exception as e:
+        print(f"[ERRORE] Check updates: {e}")
+
+    # -------------------------------------------------------------------------
+    # 2. AGGIORNAMENTO LICENZA
+    # -------------------------------------------------------------------------
+    try:
+        license_updater.run_update()
+    except Exception as e:
+        print(f"[ERRORE] License update: {e}")
+
+    # -------------------------------------------------------------------------
+    # 3. VERIFICA LICENZA BLOCCANTE
+    # -------------------------------------------------------------------------
+    is_valid, message = license_validator.verify_license()
+
+    if not is_valid:
+        root.withdraw() # Nascondi finestra principale
+        messagebox.showerror(
+            "Licenza Non Valida",
+            f"Impossibile avviare l'applicazione.\n\n{message}"
+        )
+        sys.exit(1)
+
+    # -------------------------------------------------------------------------
+    # AVVIO APP
+    # -------------------------------------------------------------------------
+
     # Imposta icona se disponibile
     try:
         root.iconbitmap(default="")
