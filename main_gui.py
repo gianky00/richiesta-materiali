@@ -31,6 +31,8 @@ class RDAApp:
         self.search_entry.pack(side="left", fill="x", expand=True, padx=5)
         self.search_entry.bind("<KeyRelease>", self.filter_data)
 
+        ttk.Button(filter_frame, text="Ricarica Dati", command=self.load_data).pack(side="right", padx=5)
+
         # --- Treeview (Table) ---
         table_frame = ttk.Frame(root)
         table_frame.pack(fill="both", expand=True, padx=10, pady=5)
