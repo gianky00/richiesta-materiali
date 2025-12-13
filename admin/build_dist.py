@@ -73,7 +73,8 @@ def build_nuitka(script_name, output_name, console=False):
     cmd = [
         sys.executable, "-m", "nuitka",
         "--standalone",
-        "--lto=no", # Velocizza la build, metti 'yes' per produzione finale ottimizzata
+        "--mingw64", # Forza utilizzo MinGW64 invece di MSVC
+        "--lto=no", # Disabilitato per stabilità con MinGW
         "--follow-imports",
         "--include-package=src",
         f"--output-dir={DIST_DIR}",
