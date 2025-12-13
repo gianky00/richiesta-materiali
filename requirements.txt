@@ -1,0 +1,12 @@
+# Requisiti per RDA Automation System
+# Installare con: pip install -r requirements.txt
+
+# Automazione Windows
+pywin32>=305
+
+# Parsing PDF
+pdfplumber>=0.10.0
+
+# Build eseguibile (opzionale, solo per sviluppatori)
+pyinstaller>=6.0.0
+
