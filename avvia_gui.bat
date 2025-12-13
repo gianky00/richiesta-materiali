@@ -1,25 +1,60 @@
 @echo off
-REM ============================================
-REM RDA Viewer - Launcher GUI
-REM ============================================
-REM Avvia l'interfaccia grafica RDA Viewer
-REM ============================================
+TITLE Intelleo RDA Viewer
+COLOR 0B
+cls
 
-cd /d "%~dp0"
+echo.
+echo  ==================================================================
+echo             INTELLEO RDA VIEWER - LAUNCHER
+echo  ==================================================================
+echo.
 
-REM Verifica se esiste l'eseguibile compilato
-if exist "dist\RDA_Viewer.exe" (
-    start "" "dist\RDA_Viewer.exe"
-    exit /b
+set VENV_DIR=.venv
+
+:: 1. Check/Create Virtual Environment
+if not exist "%VENV_DIR%\Scripts\activate.bat" (
+    if exist "%VENV_DIR%" (
+        echo  [SETUP] Ambiente virtuale corrotto rilevato. Rimozione...
+        rmdir /s /q "%VENV_DIR%"
+    )
+    echo  [SETUP] Creazione ambiente virtuale Python...
+    python -m venv %VENV_DIR%
+
+    if not exist "%VENV_DIR%\Scripts\activate.bat" (
+        echo.
+        echo  [ERRORE] Impossibile creare l'ambiente virtuale.
+        echo           Assicurati che Python sia installato correttamente.
+        pause
+        exit /b 1
+    )
+    echo  [SETUP] Ambiente virtuale creato
 )
 
-REM Altrimenti usa Python
-where pythonw >nul 2>nul
-if %ERRORLEVEL% == 0 (
-    start "" pythonw main_gui.py
-) else (
-    python main_gui.py
+:: 2. Activate Virtual Environment
+echo  [SETUP] Attivazione ambiente virtuale...
+call "%VENV_DIR%\Scripts\activate.bat"
+
+:: 3. Install/Update Dependencies
+echo  [SETUP] Verifica dipendenze...
+pip install -r requirements.txt --quiet --disable-pip-version-check >nul 2>&1
+if %errorlevel% neq 0 (
+    echo  [SETUP] Installazione dipendenze in corso...
+    pip install -r requirements.txt
+    if %errorlevel% neq 0 (
+        echo.
+        echo  [ERRORE] Impossibile installare le dipendenze.
+        pause
+        exit /b 1
+    )
 )
+echo  [SETUP] Dipendenze verificate
+echo.
 
-exit /b
+:: 4. Launch App
+echo  [LAUNCH] Avvio applicazione...
+if not exist "Logs" mkdir "Logs"
 
+:: Launch with pythonw (no console) and detach
+start "" "%VENV_DIR%\Scripts\pythonw.exe" main_gui.py
+
+exit
