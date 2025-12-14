@@ -31,7 +31,10 @@ from src.utils import config
 # Setup logging
 def setup_logging():
     """Configura il logging per catturare errori in file"""
-    log_dir = os.path.join(SCRIPT_DIR, "Logs")
+    # Usa AppData per i log
+    data_dir = config_manager.get_data_path()
+    log_dir = os.path.join(data_dir, "Logs")
+
     if not os.path.exists(log_dir):
         try:
             os.makedirs(log_dir)

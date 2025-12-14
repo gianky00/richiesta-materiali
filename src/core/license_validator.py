@@ -121,13 +121,12 @@ def get_hardware_id():
         return "ERROR_GETTING_ID"
 
 
+from src.core import config_manager
+
 def _get_license_paths():
     """Restituisce i percorsi dei file di licenza."""
-    if getattr(sys, 'frozen', False):
-        base_dir = os.path.dirname(sys.executable)
-    else:
-        # Risaliamo da src/core/license_validator.py
-        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    # Usa il percorso dati (AppData) invece che quello dell'eseguibile
+    base_dir = config_manager.get_data_path()
 
     license_dir = os.path.join(base_dir, "Licenza")
     return {

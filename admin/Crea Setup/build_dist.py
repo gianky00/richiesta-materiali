@@ -13,6 +13,7 @@ import logging
 import zipfile
 import time
 import requests
+import argparse
 from packaging import version as pkg_version
 
 # Configurazione
@@ -403,6 +404,10 @@ def deploy_to_netlify(installer_path):
 
 
 def build():
+    parser = argparse.ArgumentParser(description="Build and Deploy RDA Viewer")
+    parser.add_argument("--no-deploy", action="store_true", help="Skip deployment to Netlify")
+    args = parser.parse_args()
+
     print("="*60)
     print(f"   {APP_NAME_GUI} Build System (v{APP_VERSION})")
     print("="*60)
@@ -427,8 +432,10 @@ def build():
     installer_path = create_installer(gui_dist, bot_dist)
 
     # 4. Deploy
-    if installer_path:
+    if installer_path and not args.no_deploy:
         deploy_to_netlify(installer_path)
+    elif args.no_deploy:
+        print("\n[INFO] Deployment skipped via --no-deploy flag.")
 
     print("\nBUILD COMPLETE.")
 

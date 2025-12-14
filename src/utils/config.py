@@ -55,10 +55,14 @@ LOG_LEVEL = "INFO"
 
 def ensure_directories():
     """Crea le directory necessarie se non esistono"""
-    # Create local logs dir
-    log_dir = os.path.join(SCRIPT_DIR, "Logs")
+    # Create local logs dir in AppData
+    data_dir = config_manager.get_data_path()
+    log_dir = os.path.join(data_dir, "Logs")
     if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
+        try:
+            os.makedirs(log_dir)
+        except OSError:
+            pass # might fail if no permissions, but AppData should be writable
 
     # We generally don't want to create network paths if they are missing/unreachable,
     # but we can try.
