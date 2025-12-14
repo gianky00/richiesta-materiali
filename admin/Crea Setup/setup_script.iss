@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "RDA Viewer"
-#define MyAppPublisher "Intelleo"
+#define MyAppPublisher "Giancarlo Allegretti"
 #define MyAppURL "https://intelleo-rda-viewer.netlify.app"
 #define MyAppExeName "RDA_Viewer.exe"
 #define MyBotExeName "RDA_Bot.exe"
@@ -38,20 +38,23 @@ Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "boticon"; Description: "Crea icona Desktop per RDA Bot"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
+; Install everything into {app} root to share config.json and Licenza
 ; GUI Files
-Source: "{#GuiDir}\*"; DestDir: "{app}\GUI"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#GuiDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Bot Files
-Source: "{#BotDir}\*"; DestDir: "{app}\BOT"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#BotDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 ; Shortcut for GUI
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\GUI\{#MyAppExeName}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\GUI\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
-; Shortcut for Bot (optional, maybe in a tools folder?)
-Name: "{autoprograms}\{#MyAppName} Automation Bot"; Filename: "{app}\BOT\{#MyBotExeName}"
+; Shortcut for Bot
+Name: "{autoprograms}\{#MyAppName} Automation Bot"; Filename: "{app}\{#MyBotExeName}"
+Name: "{autodesktop}\RDA Bot"; Filename: "{app}\{#MyBotExeName}"; Tasks: boticon
 
 [Run]
-Filename: "{app}\GUI\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent

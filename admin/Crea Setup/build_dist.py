@@ -179,12 +179,17 @@ def create_installer(gui_dir, bot_dir):
             log_and_print("ISCC (Inno Setup) not found. Skipping installer generation.", "WARNING")
             return None
 
+    # Set OutputDir to "admin/Crea Setup/Setup" as requested
+    setup_output_dir = os.path.join(ROOT_DIR, "admin", "Crea Setup", "Setup")
+    if not os.path.exists(setup_output_dir):
+        os.makedirs(setup_output_dir)
+
     cmd = [
         iscc,
         f"/DMyAppVersion={APP_VERSION}",
         f"/DGuiDir={gui_dir}",
         f"/DBotDir={bot_dir}",
-        f"/DOutputDir={DIST_DIR}",
+        f"/DOutputDir={setup_output_dir}",
         iss_path
     ]
 
@@ -197,9 +202,9 @@ def create_installer(gui_dir, bot_dir):
     run_command(cmd)
 
     # Trova l'output
-    for f in os.listdir(DIST_DIR):
+    for f in os.listdir(setup_output_dir):
         if f.endswith(".exe") and "Setup" in f:
-            return os.path.join(DIST_DIR, f)
+            return os.path.join(setup_output_dir, f)
 
     return None
 
