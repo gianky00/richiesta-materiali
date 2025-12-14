@@ -4,10 +4,16 @@ import re
 
 def bump_version(part='patch'):
     """
-    Increments the version in version.py.
+    Increments the version in src/core/version.py.
     part: 'major', 'minor', or 'patch'
     """
-    version_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "version.py")
+    # admin/bump_version.py -> admin -> root
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    version_file = os.path.join(root_dir, "src", "core", "version.py")
+
+    if not os.path.exists(version_file):
+        print(f"Error: Version file not found at {version_file}")
+        sys.exit(1)
 
     with open(version_file, "r") as f:
         content = f.read()
