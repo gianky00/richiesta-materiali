@@ -86,3 +86,25 @@ Traceback (most recent call last):
     self.root.after(0, lambda: messagebox.showerror("Errore", f"Errore caricamento: {e}"))
                                                                                      ^
 NameError: cannot access free variable 'e' where it is not associated with a value in enclosing scope
+Exception in Tkinter callback
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\tkinter\__init__.py", line 1968, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\tkinter\__init__.py", line 862, in callit
+    func(*args)
+  File "C:\Users\gianc\Desktop\SCRIPT\richiesta-materiali\src\main_gui.py", line 775, in <lambda>
+    self.root.after(0, lambda: messagebox.showerror("Errore", f"Errore caricamento: {e}"))
+                                                                                     ^
+NameError: cannot access free variable 'e' where it is not associated with a value in enclosing scope
+Exception in Tkinter callback
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\tkinter\__init__.py", line 1968, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\tkinter\__init__.py", line 862, in callit
+    func(*args)
+  File "C:\Users\gianc\Desktop\SCRIPT\richiesta-materiali\src\main_gui.py", line 775, in <lambda>
+    self.root.after(0, lambda: messagebox.showerror("Errore", f"Errore caricamento: {e}"))
+                                                                                     ^
+NameError: cannot access free variable 'e' where it is not associated with a value in enclosing scope
