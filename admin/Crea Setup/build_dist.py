@@ -34,6 +34,7 @@ ISCC_EXE = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" # Path default Inno S
 
 # Icons
 ICON_APP = os.path.join(ASSETS_DIR, "app.ico")
+ICON_BOT = os.path.join(ASSETS_DIR, "bot.ico")
 ICON_SETUP = os.path.join(ASSETS_DIR, "setup.ico")
 
 # Logging
@@ -88,7 +89,7 @@ def check_pyinstaller():
             log_and_print("Failed to install PyInstaller.", "ERROR")
             return False
 
-def build_pyinstaller(script_name, output_name, console=False, hidden_imports=None):
+def build_pyinstaller(script_name, output_name, console=False, hidden_imports=None, icon_path=None):
     """Compila uno script con PyInstaller."""
     log_and_print(f"--- Building {output_name} with PyInstaller ---")
 
@@ -129,12 +130,14 @@ def build_pyinstaller(script_name, output_name, console=False, hidden_imports=No
         for imp in hidden_imports:
             options.append(f"--hidden-import={imp}")
 
-    # Add icon if exists
-    if os.path.exists(ICON_APP):
-        log_and_print(f"Using application icon: {ICON_APP}")
-        options.append(f"--icon={ICON_APP}")
+    # Add icon if provided and exists
+    if icon_path and os.path.exists(icon_path):
+        log_and_print(f"Using icon: {icon_path}")
+        options.append(f"--icon={icon_path}")
+    elif icon_path:
+        log_and_print(f"Icon not found at {icon_path}. Using default.", "WARNING")
     else:
-        log_and_print(f"Icon not found at {ICON_APP}. Using default.", "WARNING")
+        log_and_print("No icon specified.", "INFO")
 
     cmd = [sys.executable, "-m", "PyInstaller"] + options
 
@@ -407,12 +410,12 @@ def build():
 
     # 1. Build GUI
     gui_imports = ["sqlite3", "tkinter", "tkinter.ttk"]
-    gui_dist = build_pyinstaller(MAIN_SCRIPT_GUI, APP_NAME_GUI, console=False, hidden_imports=gui_imports)
+    gui_dist = build_pyinstaller(MAIN_SCRIPT_GUI, APP_NAME_GUI, console=False, hidden_imports=gui_imports, icon_path=ICON_APP)
     copy_assets(gui_dist)
 
     # 2. Build Bot
     bot_imports = ["win32com.client", "pythoncom", "pdfplumber", "sqlite3"]
-    bot_dist = build_pyinstaller(MAIN_SCRIPT_BOT, APP_NAME_BOT, console=True, hidden_imports=bot_imports)
+    bot_dist = build_pyinstaller(MAIN_SCRIPT_BOT, APP_NAME_BOT, console=True, hidden_imports=bot_imports, icon_path=ICON_BOT)
     copy_assets(bot_dist)
 
     # 3. Installer

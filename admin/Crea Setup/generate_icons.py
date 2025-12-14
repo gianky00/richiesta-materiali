@@ -108,6 +108,14 @@ def main():
         filename=os.path.join(assets_dir, "app.ico")
     )
 
+    # Bot Icon: Purple or Orange (#6f42c1) with White Text "BOT"
+    create_modern_icon(
+        text="BOT",
+        color_bg=(111, 66, 193, 255), # #6f42c1 (Bootstrap Purple)
+        color_text=(255, 255, 255, 255),
+        filename=os.path.join(assets_dir, "bot.ico")
+    )
+
     # Setup Icon: A distinct color, maybe Green or Darker Blue, text "SETUP"
     # Or "INST" for Install
     create_modern_icon(
