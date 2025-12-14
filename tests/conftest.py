@@ -15,7 +15,10 @@ module_names = [
     'win32com.client',
     'win32api',
     'win32gui',
-    'win32con'
+    'win32con',
+    'pdfplumber',
+    'pdfplumber.page',
+    'pdfplumber.pdf'
 ]
 
 for name in module_names:
