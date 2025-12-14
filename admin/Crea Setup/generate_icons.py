@@ -9,8 +9,21 @@ def create_modern_icon(text, color_bg, color_text, filename):
     sizes = [(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)]
     images = []
 
-    # Path to font
-    font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    # Path to font - Try to find a system font
+    # Fallback list of fonts
+    font_paths = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", # Linux
+        "C:/Windows/Fonts/arialbd.ttf", # Windows Arial Bold
+        "C:/Windows/Fonts/arial.ttf",   # Windows Arial
+        "C:/Windows/Fonts/seguiSb.ttf", # Windows Segoe UI Semibold
+        "arial.ttf" # Current dir or PATH
+    ]
+
+    font_path = None
+    for p in font_paths:
+        if os.path.exists(p):
+            font_path = p
+            break
 
     for size in sizes:
         width, height = size
@@ -33,16 +46,32 @@ def create_modern_icon(text, color_bg, color_text, filename):
         # Draw Text
         # Load font dynamically based on size
         font_size = int(height * 0.4)
-        try:
-            font = ImageFont.truetype(font_path, font_size)
-        except IOError:
-            font = ImageFont.load_default()
+
+        font = None
+        if font_path:
+            try:
+                font = ImageFont.truetype(font_path, font_size)
+            except IOError:
+                pass
+
+        if font is None:
+            # Fallback to default load_default() which is very small/pixelated usually,
+            # but better than crash.
+            # In newer Pillow versions, load_default() can take a size!
+            try:
+                font = ImageFont.load_default(size=font_size)
+            except TypeError:
+                font = ImageFont.load_default()
 
         # Calculate text position to center it
         # Using textbbox for newer Pillow versions
-        left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
-        text_w = right - left
-        text_h = bottom - top
+        try:
+            left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
+            text_w = right - left
+            text_h = bottom - top
+        except AttributeError:
+            # Older Pillow fallback
+            text_w, text_h = draw.textsize(text, font=font)
 
         text_x = (width - text_w) / 2
         text_y = (height - text_h) / 2 - (height * 0.05) # Slight adjust up

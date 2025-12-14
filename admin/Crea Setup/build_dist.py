@@ -105,6 +105,9 @@ def build_pyinstaller(script_name, output_name, console=False, hidden_imports=No
         shutil.rmtree(target_dir)
     os.makedirs(target_dir)
 
+    # Use absolute path for src to avoid PyInstaller confusion
+    src_abs_path = os.path.join(ROOT_DIR, "src")
+
     options = [
         script_name,
         "--name=" + output_name,
@@ -114,7 +117,7 @@ def build_pyinstaller(script_name, output_name, console=False, hidden_imports=No
         f"--distpath={target_dir}", # Output executable here
         "--workpath=" + os.path.join(DIST_DIR, "build", output_name), # Temp build files
         "--specpath=" + os.path.join(DIST_DIR, "build", output_name), # Spec file
-        "--add-data=src;src", # Bundle source code
+        f"--add-data={src_abs_path};src", # Bundle source code (Absolute path)
     ]
 
     if console:

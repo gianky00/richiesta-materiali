@@ -68,6 +68,10 @@ if %errorlevel% neq 0 (
 :: 4. Build & Deploy
 echo.
 echo [4/5] Building Application and Installer...
+
+echo Generating Icons...
+python "admin/Crea Setup/generate_icons.py"
+
 echo This may take a few minutes...
 python "admin/Crea Setup/build_dist.py"
 if %errorlevel% neq 0 (
