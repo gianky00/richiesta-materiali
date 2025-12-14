@@ -31,6 +31,7 @@ ROOT_DIR = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 DIST_DIR = os.path.join(ROOT_DIR, "dist")
 SRC_DIR = os.path.join(ROOT_DIR, "src")
 ASSETS_DIR = os.path.join(ROOT_DIR, "assets")
+LICENZA_DIR = os.path.join(ROOT_DIR, "Licenza")
 ISCC_EXE = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" # Path default Inno Setup
 
 # Icons
@@ -156,11 +157,10 @@ def copy_assets(target_dir):
     """Copia le risorse necessarie nella cartella di build."""
     log_and_print(f"Copying assets to {target_dir}...")
 
-    # Crea cartella Licenza vuota
+    # Crea cartella Licenza vuota (rimane vuota nell'exe, ma Inno Setup userà quella in root)
     os.makedirs(os.path.join(target_dir, "Licenza"), exist_ok=True)
 
-    # Note: src is bundled inside the EXE by PyInstaller (--add-data),
-    # so we do not copy it here to avoid duplication in the installer.
+    # Note: src is bundled inside the EXE by PyInstaller (--add-data).
 
 def create_installer(gui_dir, bot_dir):
     """Compila lo script Inno Setup."""
