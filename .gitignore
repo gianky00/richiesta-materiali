@@ -11,3 +11,5 @@ src/core/Licenza/validity.token
 /tests/__pycache__
 src/core/Licenza/config.dat
 Logs/app_error.log
+/dist
+/build
