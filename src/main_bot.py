@@ -15,8 +15,9 @@ import logging
 import sys
 import os
 
-# Aggiungi la directory dello script al path
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# Aggiungi la directory ROOT al path per permettere import relativi come 'src.utils...'
+# Risaliamo da src/main_bot.py a ROOT
+SCRIPT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if SCRIPT_DIR not in sys.path:
     sys.path.insert(0, SCRIPT_DIR)
 

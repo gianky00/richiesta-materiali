@@ -15,16 +15,16 @@ from collections import Counter
 import re
 import traceback
 
-# Moduli Licenza e Aggiornamento
-from src.core import app_updater
-from src.core import license_updater
-from src.core import license_validator
-
 # Percorsi configurazione
 # Risaliamo da src/main_gui.py
 SCRIPT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if SCRIPT_DIR not in sys.path:
     sys.path.insert(0, SCRIPT_DIR)
+
+# Moduli Licenza e Aggiornamento
+from src.core import app_updater
+from src.core import license_updater
+from src.core import license_validator
 
 # Setup logging
 def setup_logging():
