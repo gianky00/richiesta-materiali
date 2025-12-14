@@ -3,9 +3,9 @@ import sys
 import pytest
 from unittest.mock import MagicMock
 
-# The main scripts are in root.
-import main_gui
-import main_bot
+# The main scripts are in src
+from src import main_gui
+from src import main_bot
 
 class TestMainGui:
     def test_database_manager(self, tmp_path):
@@ -46,16 +46,16 @@ class TestMainBot:
         mock_excel.check_if_exists.return_value = False
 
         # Mock PDF extraction
-        mocker.patch("main_bot.extract_rda_data", return_value={
+        mocker.patch("src.main_bot.extract_rda_data", return_value={
             'rda_number_raw': 'RDA999',
             'rda_date_str': '2023-01-01'
         })
 
         # Mock PDF saving
-        mocker.patch("main_bot.save_pdf_to_archive", return_value="final/path/file.pdf")
+        mocker.patch("src.main_bot.save_pdf_to_archive", return_value="final/path/file.pdf")
 
         # Mock Logger
-        mocker.patch("main_bot.logger")
+        mocker.patch("src.main_bot.logger")
 
         # Get callback
         cb = main_bot.process_pdf_callback(mock_excel)

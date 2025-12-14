@@ -16,13 +16,15 @@ import shutil
 
 # Configurazione
 APP_NAME = "RDA_Viewer"
-MAIN_SCRIPT = "main_gui.py"
+MAIN_SCRIPT = "src/main_gui.py"
 ICON_FILE = None  # Opzionale: "icon.ico"
 
 # Directory
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DIST_DIR = os.path.join(SCRIPT_DIR, "dist")
-BUILD_DIR = os.path.join(SCRIPT_DIR, "build")
+# Risaliamo alla root del progetto (admin/Crea Setup -> admin -> root)
+ROOT_DIR = os.path.dirname(os.path.dirname(SCRIPT_DIR))
+DIST_DIR = os.path.join(ROOT_DIR, "dist")
+BUILD_DIR = os.path.join(ROOT_DIR, "build")
 
 
 def check_pyinstaller():
@@ -78,7 +80,7 @@ def build_gui():
     print("Comando:", " ".join(cmd))
     print()
     
-    result = subprocess.run(cmd, cwd=SCRIPT_DIR)
+    result = subprocess.run(cmd, cwd=ROOT_DIR)
     
     if result.returncode == 0:
         exe_path = os.path.join(DIST_DIR, f"{APP_NAME}.exe")
@@ -97,7 +99,7 @@ def build_bot():
     print("="*50 + "\n")
     
     options = [
-        "main_bot.py",
+        "src/main_bot.py",
         "--name=RDA_Bot",
         "--onefile",
         "--console",           # Con console per log
@@ -118,7 +120,7 @@ def build_bot():
     print("Comando:", " ".join(cmd))
     print()
     
-    result = subprocess.run(cmd, cwd=SCRIPT_DIR)
+    result = subprocess.run(cmd, cwd=ROOT_DIR)
     
     if result.returncode == 0:
         exe_path = os.path.join(DIST_DIR, "RDA_Bot.exe")

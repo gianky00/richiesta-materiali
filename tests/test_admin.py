@@ -6,8 +6,19 @@ import json
 from unittest.mock import MagicMock
 
 # Import admin tool
-sys.path.append(os.path.join(os.getcwd(), 'admin'))
-import admin_license_gui
+# Since it's in admin/Crea Licenze, and has spaces, import might be tricky if not in path
+# Also, it has no __init__.py usually if it's a script.
+# We'll use importlib.
+
+import importlib.util
+spec = importlib.util.spec_from_file_location(
+    "admin_license_gui",
+    os.path.join(os.getcwd(), 'admin', 'Crea Licenze', 'admin_license_gui.py')
+)
+admin_license_gui = importlib.util.module_from_spec(spec)
+sys.modules["admin_license_gui"] = admin_license_gui
+spec.loader.exec_module(admin_license_gui)
+
 
 def test_generate_license(tmp_path, mocker):
     # Setup paths in admin_license_gui to use tmp_path

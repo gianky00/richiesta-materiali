@@ -18,13 +18,15 @@ from packaging import version as pkg_version
 # Configurazione
 APP_NAME_GUI = "RDA_Viewer"
 APP_NAME_BOT = "RDA_Bot"
-MAIN_SCRIPT_GUI = "main_gui.py"
-MAIN_SCRIPT_BOT = "main_bot.py"
+MAIN_SCRIPT_GUI = "src/main_gui.py"
+MAIN_SCRIPT_BOT = "src/main_bot.py"
 
 NETLIFY_SITE_NAME = "intelleo-rda-viewer" # Nome del sito Netlify per Site ID lookup
 
 # Percorsi
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Risaliamo alla root del progetto (admin/Crea Setup -> admin -> root)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 DIST_DIR = os.path.join(ROOT_DIR, "dist")
 SRC_DIR = os.path.join(ROOT_DIR, "src")
 ISCC_EXE = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" # Path default Inno Setup
@@ -35,7 +37,7 @@ logger = logging.getLogger()
 
 # Import versione
 sys.path.append(ROOT_DIR)
-import version
+from src.core import version
 APP_VERSION = version.__version__
 
 def log_and_print(msg, level="INFO"):
@@ -90,7 +92,12 @@ def build_nuitka(script_name, output_name, console=False):
     run_command(cmd, cwd=ROOT_DIR)
 
     # Rinomina la cartella di output generata da Nuitka
-    nuitka_dist_dir = os.path.join(DIST_DIR, f"{script_name.replace('.py', '')}.dist")
+    # Nuitka genera output basato sul nome dello script principale, ma se è in sottocartella potrebbe variare.
+    # Di solito appiattisce il nome. Se script è src/main_gui.py, output potrebbe essere src.main_gui.dist o main_gui.dist
+    # Verifichiamo cosa genera nuitka solitamente: "main_gui.dist" (basename)
+
+    script_basename = os.path.basename(script_name).replace('.py', '')
+    nuitka_dist_dir = os.path.join(DIST_DIR, f"{script_basename}.dist")
     final_target_dir = os.path.join(DIST_DIR, output_name)
 
     if os.path.exists(final_target_dir):
@@ -135,7 +142,7 @@ def create_installer(gui_dir, bot_dir):
     """Compila lo script Inno Setup."""
     log_and_print("--- Compiling Installer ---")
 
-    iss_path = os.path.join(ROOT_DIR, "admin", "setup_script.iss")
+    iss_path = os.path.join(ROOT_DIR, "admin", "Crea Setup", "setup_script.iss")
     if not os.path.exists(iss_path):
         log_and_print(f"Setup script not found: {iss_path}", "ERROR")
         return None

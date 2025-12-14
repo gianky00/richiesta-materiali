@@ -8,7 +8,7 @@ import os
 import re
 from datetime import datetime
 
-from .config import LOG_FORMAT, LOG_LEVEL
+from src.utils.config import LOG_FORMAT, LOG_LEVEL
 
 
 def setup_logging(name="RDA_Bot", log_file=None):

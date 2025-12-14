@@ -8,7 +8,7 @@ import os
 import shutil
 import logging
 from datetime import datetime
-from .config import PDF_SAVE_PATH
+from src.utils.config import PDF_SAVE_PATH
 
 logger = logging.getLogger("RDA_Bot")
 
