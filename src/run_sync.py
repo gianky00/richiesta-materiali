@@ -11,13 +11,14 @@ import sys
 import os
 
 # Aggiungi directory al path
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# Risaliamo da src/run_sync.py
+SCRIPT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if SCRIPT_DIR not in sys.path:
     sys.path.insert(0, SCRIPT_DIR)
 
-from src.excel_manager import ExcelManager
-from src.database import init_db, replace_all_data
-from src.utils import logger
+from src.data.excel_manager import ExcelManager
+from src.data.database import init_db, replace_all_data
+from src.utils.utils import logger
 
 
 def run_sync():

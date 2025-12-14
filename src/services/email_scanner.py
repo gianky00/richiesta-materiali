@@ -6,11 +6,11 @@ import win32com.client
 import os
 import logging
 from datetime import datetime, timedelta
-from .config import (
+from src.utils.config import (
     OUTLOOK_FOLDER_ID, TARGET_FOLDER_NAME, DAYS_TO_CHECK, 
     ATTACHMENT_NAME, SENDER_EMAIL, EMAIL_SENDER, EMAIL_RECIPIENT, EMAIL_SUBJECT
 )
-from .utils import format_number
+from src.utils.utils import format_number
 
 logger = logging.getLogger("RDA_Bot")
 

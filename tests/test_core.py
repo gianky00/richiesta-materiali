@@ -7,10 +7,10 @@ from cryptography.fernet import Fernet
 from unittest.mock import MagicMock
 
 # Import modules to test
-import version
-import license_validator
-import license_updater
-import app_updater
+from src.core import version
+from src.core import license_validator
+from src.core import license_updater
+from src.core import app_updater
 
 # --- Version Tests ---
 def test_version_format():
@@ -45,7 +45,7 @@ def test_get_license_dir():
 
 def test_check_grace_period_no_token(mocker):
     # Mock _get_validity_token_path to point to non-existent file
-    mocker.patch("license_updater._get_validity_token_path", return_value="nonexistent.token")
+    mocker.patch("src.core.license_updater._get_validity_token_path", return_value="nonexistent.token")
 
     with pytest.raises(Exception, match="Nessuna validazione online precedente"):
         license_updater.check_grace_period()

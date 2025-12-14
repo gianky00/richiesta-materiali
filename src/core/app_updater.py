@@ -3,7 +3,7 @@ RDA Viewer - App Updater
 Gestisce il controllo e la notifica di aggiornamenti dell'applicazione.
 """
 import requests
-import version
+from . import version
 import webbrowser
 from tkinter import messagebox
 from packaging import version as pkg_version

@@ -8,7 +8,7 @@ import json
 import sys
 from datetime import datetime, timedelta, timezone
 from cryptography.fernet import Fernet
-import license_validator
+from . import license_validator
 
 # Chiave per cifratura token grace period
 GRACE_PERIOD_KEY = b'8kHs_rmwqaRUk1AQLGX65g4AEkWUDapWVsMFUQpN9Ek='

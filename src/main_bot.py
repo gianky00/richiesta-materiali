@@ -15,21 +15,22 @@ import logging
 import sys
 import os
 
-# Aggiungi la directory dello script al path
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# Aggiungi la directory ROOT al path per permettere import relativi come 'src.utils...'
+# Risaliamo da src/main_bot.py a ROOT
+SCRIPT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if SCRIPT_DIR not in sys.path:
     sys.path.insert(0, SCRIPT_DIR)
 
-from src.config import PDF_SAVE_PATH, ensure_directories
-from src.excel_manager import ExcelManager
-from src.email_scanner import EmailScanner
-from src.pdf_parser import extract_rda_data, save_pdf_to_archive
-from src.database import init_db, replace_all_data
-from src.utils import logger
+from src.utils.config import PDF_SAVE_PATH, ensure_directories
+from src.data.excel_manager import ExcelManager
+from src.services.email_scanner import EmailScanner
+from src.services.pdf_parser import extract_rda_data, save_pdf_to_archive
+from src.data.database import init_db, replace_all_data
+from src.utils.utils import logger
 
 # Moduli Licenza
-import license_updater
-import license_validator
+from src.core import license_updater
+from src.core import license_validator
 
 
 def process_pdf_callback(excel_mgr):

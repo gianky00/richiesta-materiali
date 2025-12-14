@@ -55,6 +55,6 @@ echo  [LAUNCH] Avvio applicazione...
 if not exist "Logs" mkdir "Logs"
 
 :: Launch with pythonw (no console) and detach
-start "" "%VENV_DIR%\Scripts\pythonw.exe" main_gui.py
+start "" "%VENV_DIR%\Scripts\pythonw.exe" src/main_gui.py
 
 exit

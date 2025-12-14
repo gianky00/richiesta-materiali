@@ -14,7 +14,8 @@ def get_base_path():
         return os.path.dirname(sys.executable)
     else:
         # Script Python normale
-        return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # Risaliamo da src/utils/config.py fino alla root
+        return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 SCRIPT_DIR = get_base_path()
 

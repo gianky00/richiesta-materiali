@@ -126,7 +126,8 @@ def _get_license_paths():
     if getattr(sys, 'frozen', False):
         base_dir = os.path.dirname(sys.executable)
     else:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
+        # Risaliamo da src/core/license_validator.py
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
     license_dir = os.path.join(base_dir, "Licenza")
     return {

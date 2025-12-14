@@ -17,9 +17,9 @@ if exist "dist\RDA_Bot.exe" (
 REM Altrimenti usa Python
 where pythonw >nul 2>nul
 if %ERRORLEVEL% == 0 (
-    start "RDA Bot" /B pythonw main_bot.py
+    start "RDA Bot" /B pythonw src/main_bot.py
 ) else (
-    python main_bot.py
+    python src/main_bot.py
 )
 
 exit /b

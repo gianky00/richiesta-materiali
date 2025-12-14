@@ -5,7 +5,7 @@ Modulo per la gestione del database SQLite
 import sqlite3
 import logging
 import os
-from .config import SQLITE_DB_PATH, DATABASE_DIR
+from src.utils.config import SQLITE_DB_PATH, DATABASE_DIR
 
 logger = logging.getLogger("RDA_Bot")
 

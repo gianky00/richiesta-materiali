@@ -1,7 +1,11 @@
 import sys
+import os
 import types
 from unittest.mock import MagicMock
 import pytest
+
+# Add src to path to ensure modules can be found
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # --- Mock Windows-specific modules GLOBALLY before any test imports code ---
 
@@ -11,7 +15,10 @@ module_names = [
     'win32com.client',
     'win32api',
     'win32gui',
-    'win32con'
+    'win32con',
+    'pdfplumber',
+    'pdfplumber.page',
+    'pdfplumber.pdf'
 ]
 
 for name in module_names:
