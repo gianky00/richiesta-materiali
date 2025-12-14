@@ -9,6 +9,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from cryptography.fernet import Fernet
 from . import license_validator
+from src.core import config_manager
 
 # Chiave per cifratura token grace period
 GRACE_PERIOD_KEY = b'8kHs_rmwqaRUk1AQLGX65g4AEkWUDapWVsMFUQpN9Ek='
@@ -25,11 +26,8 @@ def get_github_token():
 
 
 def get_license_dir():
-    """Restituisce il percorso della cartella Licenza."""
-    if getattr(sys, 'frozen', False):
-        base_dir = os.path.dirname(sys.executable)
-    else:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
+    """Restituisce il percorso della cartella Licenza (in AppData)."""
+    base_dir = config_manager.get_data_path()
     return os.path.join(base_dir, "Licenza")
 
 

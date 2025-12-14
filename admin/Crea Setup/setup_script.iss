@@ -48,11 +48,8 @@ Name: "boticon"; Description: "Crea icona Desktop per RDA Bot"; GroupDescription
 Source: "{#GuiDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#BotDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-; Install template License content to Program Files so the user can manually copy it if needed,
-; or the app could potentially look here as fallback.
-Source: "..\..\Licenza\*"; DestDir: "{app}\Licenza_Default"; Flags: ignoreversion recursesubdirs createallsubdirs
-
 ; Note: Licenza and Logs are now expected in {localappdata}\RDA Viewer
+; We don't install anything there by default, the app will create/look for them.
 ; We don't install anything there by default, the app will create/look for them.
 ; If we wanted to distribute a default license, we would need to install it to {localappdata}
 ; but Inno Setup {localappdata} refers to the admin user's AppData if run as admin,

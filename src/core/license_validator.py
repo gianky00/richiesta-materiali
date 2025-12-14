@@ -181,19 +181,6 @@ def verify_license():
     if not os.path.exists(paths["dir"]):
         try:
             os.makedirs(paths["dir"])
-
-            # Tenta di copiare la licenza di default se presente nella directory di installazione
-            base_install_dir = config_manager.get_base_path()
-            default_license_dir = os.path.join(base_install_dir, "Licenza_Default")
-
-            if os.path.exists(default_license_dir):
-                import shutil
-                for item in os.listdir(default_license_dir):
-                    s = os.path.join(default_license_dir, item)
-                    d = os.path.join(paths["dir"], item)
-                    if os.path.isfile(s):
-                        shutil.copy2(s, d)
-
         except OSError:
             return False, "Impossibile creare cartella 'Licenza'"
 
