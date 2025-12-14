@@ -39,9 +39,9 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"
 
 [Tasks]
-; Desktop icons with default checked state
-Name: "desktopicon"; Description: "Crea icona Desktop per RDA Viewer"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checked
-Name: "boticon"; Description: "Crea icona Desktop per RDA Bot"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checked
+; Desktop icons with default checked state (no flag needed for checked by default)
+Name: "desktopicon"; Description: "Crea icona Desktop per RDA Viewer"; GroupDescription: "{cm:AdditionalIcons}"
+Name: "boticon"; Description: "Crea icona Desktop per RDA Bot"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
 ; Install executables to Program Files ({app})
