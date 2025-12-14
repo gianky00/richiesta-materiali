@@ -1,3 +1,4 @@
 DATABASE/~$database_RDA.xlsm
 /.venv
 /__pycache__
+/tests/__pycache__
