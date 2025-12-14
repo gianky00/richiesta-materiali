@@ -25,11 +25,16 @@ if SCRIPT_DIR not in sys.path:
 from src.core import app_updater
 from src.core import license_updater
 from src.core import license_validator
+from src.core import config_manager
+from src.utils import config
 
 # Setup logging
 def setup_logging():
     """Configura il logging per catturare errori in file"""
-    log_dir = os.path.join(SCRIPT_DIR, "Logs")
+    # Usa AppData per i log
+    data_dir = config_manager.get_data_path()
+    log_dir = os.path.join(data_dir, "Logs")
+
     if not os.path.exists(log_dir):
         try:
             os.makedirs(log_dir)
@@ -438,6 +443,11 @@ class RDAViewerApp:
         self.search_tab = ttk.Frame(self.notebook)
         self.notebook.add(self.search_tab, text="  🔍 Ricerca Avanzata  ")
         self._build_search_tab()
+
+        # Tab 6: Configurazione
+        self.config_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.config_tab, text="  ⚙️ Configurazione  ")
+        self._build_config_tab()
         
         # Status bar
         self._build_statusbar(main_container)
@@ -1287,6 +1297,78 @@ class RDAViewerApp:
             messagebox.showinfo("Esportazione", f"File esportato con successo:\n{filepath}")
         except Exception as e:
             messagebox.showerror("Errore", f"Errore durante l'esportazione: {e}")
+
+    def _build_config_tab(self):
+        """Costruisce il tab di configurazione"""
+        from tkinter import filedialog
+
+        # Container
+        container = ttk.Frame(self.config_tab, padding=20)
+        container.pack(fill="both", expand=True)
+
+        ttk.Label(container, text="⚙️ Configurazione Applicazione", style="Title.TLabel").pack(anchor="w", pady=(0, 20))
+
+        # Frame paths
+        path_frame = ttk.LabelFrame(container, text="Percorsi File", padding=15)
+        path_frame.pack(fill="x", pady=10)
+
+        # Excel Path
+        ttk.Label(path_frame, text="File Excel Database:").grid(row=0, column=0, sticky="w", pady=5)
+        self.config_excel_var = tk.StringVar(value=config.EXCEL_DB_PATH)
+        ttk.Entry(path_frame, textvariable=self.config_excel_var, width=70).grid(row=0, column=1, padx=10, pady=5)
+        ttk.Button(path_frame, text="Sfoglia...", command=lambda: self._browse_file(self.config_excel_var, "Excel Files", "*.xlsm")).grid(row=0, column=2, pady=5)
+
+        # PDF Folder
+        ttk.Label(path_frame, text="Cartella PDF RDA:").grid(row=1, column=0, sticky="w", pady=5)
+        self.config_pdf_var = tk.StringVar(value=config.PDF_SAVE_PATH)
+        ttk.Entry(path_frame, textvariable=self.config_pdf_var, width=70).grid(row=1, column=1, padx=10, pady=5)
+        ttk.Button(path_frame, text="Sfoglia...", command=lambda: self._browse_folder(self.config_pdf_var)).grid(row=1, column=2, pady=5)
+
+        # Database Dir (Optional/Advanced)
+        ttk.Label(path_frame, text="Cartella Database:").grid(row=2, column=0, sticky="w", pady=5)
+        self.config_db_dir_var = tk.StringVar(value=config.DATABASE_DIR)
+        ttk.Entry(path_frame, textvariable=self.config_db_dir_var, width=70).grid(row=2, column=1, padx=10, pady=5)
+        ttk.Button(path_frame, text="Sfoglia...", command=lambda: self._browse_folder(self.config_db_dir_var)).grid(row=2, column=2, pady=5)
+
+        # Buttons
+        btn_frame = ttk.Frame(container, padding=20)
+        btn_frame.pack(fill="x")
+        ttk.Button(btn_frame, text="💾 Salva Configurazione", style="Success.TButton", command=self._save_configuration).pack(side="right")
+        ttk.Button(btn_frame, text="🔄 Ripristina Default", command=self._reset_configuration).pack(side="right", padx=10)
+
+        info_lbl = ttk.Label(container, text="Nota: Le modifiche richiedono il riavvio dell'applicazione.", foreground=ModernStyle.TEXT_MUTED)
+        info_lbl.pack(pady=10)
+
+    def _browse_file(self, var, file_desc, file_ext):
+        from tkinter import filedialog
+        path = filedialog.askopenfilename(filetypes=[(file_desc, file_ext), ("All Files", "*.*")])
+        if path:
+            var.set(path.replace('/', '\\'))
+
+    def _browse_folder(self, var):
+        from tkinter import filedialog
+        path = filedialog.askdirectory()
+        if path:
+            var.set(path.replace('/', '\\'))
+
+    def _save_configuration(self):
+        new_config = {
+            "excel_path": self.config_excel_var.get(),
+            "pdf_folder": self.config_pdf_var.get(),
+            "database_dir": self.config_db_dir_var.get()
+        }
+
+        if config_manager.save_config(new_config):
+            messagebox.showinfo("Successo", "Configurazione salvata correttamente.\nRiavvia l'applicazione per applicare le modifiche.")
+        else:
+            messagebox.showerror("Errore", "Impossibile salvare la configurazione. Verifica i permessi.")
+
+    def _reset_configuration(self):
+        if messagebox.askyesno("Conferma", "Vuoi ripristinare la configurazione predefinita?"):
+             defaults = config_manager.DEFAULT_CONFIG
+             self.config_excel_var.set(defaults["excel_path"])
+             self.config_pdf_var.set(defaults["pdf_folder"])
+             self.config_db_dir_var.set(defaults["database_dir"])
 
 
 def main():

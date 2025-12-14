@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "RDA Viewer"
-#define MyAppPublisher "Intelleo"
+#define MyAppPublisher "Giancarlo Allegretti"
 #define MyAppURL "https://intelleo-rda-viewer.netlify.app"
 #define MyAppExeName "RDA_Viewer.exe"
 #define MyBotExeName "RDA_Bot.exe"
@@ -25,33 +25,44 @@ AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DisableProgramGroupPage=yes
-; Remove the following line to run in administrative install mode (install for all users.)
-PrivilegesRequired=lowest
+; Require admin privileges for Program Files
+PrivilegesRequired=admin
 OutputDir={#OutputDir}
 OutputBaseFilename=RDA_Viewer_Setup_{#MyAppVersion}
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
+; Add entry to Control Panel > Add/Remove Programs
+UninstallDisplayIcon={app}\{#MyAppExeName}
 
 [Languages]
 Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+; Desktop icons with default checked state (no flag needed for checked by default)
+Name: "desktopicon"; Description: "Crea icona Desktop per RDA Viewer"; GroupDescription: "{cm:AdditionalIcons}"
+Name: "boticon"; Description: "Crea icona Desktop per RDA Bot"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
-; GUI Files
-Source: "{#GuiDir}\*"; DestDir: "{app}\GUI"; Flags: ignoreversion recursesubdirs createallsubdirs
-; Bot Files
-Source: "{#BotDir}\*"; DestDir: "{app}\BOT"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Install executables to Program Files ({app})
+Source: "{#GuiDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#BotDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+; Note: Licenza and Logs are now expected in {localappdata}\RDA Viewer
+; We don't install anything there by default, the app will create/look for them.
+; We don't install anything there by default, the app will create/look for them.
+; If we wanted to distribute a default license, we would need to install it to {localappdata}
+; but Inno Setup {localappdata} refers to the admin user's AppData if run as admin,
+; so typically we leave it to the app to initialize on first run for the actual user.
 
 [Icons]
 ; Shortcut for GUI
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\GUI\{#MyAppExeName}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\GUI\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
-; Shortcut for Bot (optional, maybe in a tools folder?)
-Name: "{autoprograms}\{#MyAppName} Automation Bot"; Filename: "{app}\BOT\{#MyBotExeName}"
+; Shortcut for Bot
+Name: "{autoprograms}\RDA Bot"; Filename: "{app}\{#MyBotExeName}"
+Name: "{autodesktop}\RDA Bot"; Filename: "{app}\{#MyBotExeName}"; Tasks: boticon
 
 [Run]
-Filename: "{app}\GUI\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent

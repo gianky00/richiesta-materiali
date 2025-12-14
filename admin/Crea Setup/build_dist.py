@@ -1,6 +1,6 @@
 """
 RDA Automation System - Build & Deploy Script
-Utilizza Nuitka per la compilazione e Inno Setup per l'installer.
+Utilizza PyInstaller per la compilazione e Inno Setup per l'installer.
 Supporta aggiornamenti automatici tramite Netlify.
 """
 
@@ -13,6 +13,7 @@ import logging
 import zipfile
 import time
 import requests
+import argparse
 from packaging import version as pkg_version
 
 # Configurazione
@@ -29,7 +30,14 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 DIST_DIR = os.path.join(ROOT_DIR, "dist")
 SRC_DIR = os.path.join(ROOT_DIR, "src")
+ASSETS_DIR = os.path.join(ROOT_DIR, "assets")
+LICENZA_DIR = os.path.join(ROOT_DIR, "Licenza")
 ISCC_EXE = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" # Path default Inno Setup
+
+# Icons
+ICON_APP = os.path.join(ASSETS_DIR, "app.ico")
+ICON_BOT = os.path.join(ASSETS_DIR, "bot.ico")
+ICON_SETUP = os.path.join(ASSETS_DIR, "setup.ico")
 
 # Logging
 logging.basicConfig(level=logging.INFO, format='[BUILD] %(message)s')
@@ -68,75 +76,91 @@ def clean_dist():
         shutil.rmtree(DIST_DIR)
     os.makedirs(DIST_DIR)
 
-def build_nuitka(script_name, output_name, console=False):
-    """Compila uno script con Nuitka."""
-    log_and_print(f"--- Building {output_name} with Nuitka ---")
+def check_pyinstaller():
+    """Verifica che PyInstaller sia installato."""
+    try:
+        import PyInstaller
+        log_and_print(f"PyInstaller found (version {PyInstaller.__version__})")
+        return True
+    except ImportError:
+        log_and_print("PyInstaller not found. Installing...", "WARNING")
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "pyinstaller"])
+            return True
+        except subprocess.CalledProcessError:
+            log_and_print("Failed to install PyInstaller.", "ERROR")
+            return False
 
-    cmd = [
-        sys.executable, "-m", "nuitka",
-        "--standalone",
-        "--mingw64", # Forza utilizzo MinGW64 invece di MSVC
-        "--lto=no", # Disabilitato per stabilità con MinGW
-        "--follow-imports",
-        "--include-package=src",
-        f"--output-dir={DIST_DIR}",
-        "--output-filename=" + output_name,
+def build_pyinstaller(script_name, output_name, console=False, hidden_imports=None, icon_path=None):
+    """Compila uno script con PyInstaller."""
+    log_and_print(f"--- Building {output_name} with PyInstaller ---")
+
+    # Temp output dir for this specific build (to match structure expected by Inno Setup)
+    # output_name is like "RDA_Viewer"
+    # We want dist/temp_gui/RDA_Viewer.exe
+
+    # Identify if it is GUI or Bot based on name to name the temp dir correctly
+    # build() calls with APP_NAME_GUI ("RDA_Viewer") and APP_NAME_BOT ("RDA_Bot")
+    temp_dir_name = "temp_gui" if output_name == APP_NAME_GUI else "temp_bot"
+    target_dir = os.path.join(DIST_DIR, temp_dir_name)
+
+    if os.path.exists(target_dir):
+        shutil.rmtree(target_dir)
+    os.makedirs(target_dir)
+
+    # Use absolute path for src to avoid PyInstaller confusion
+    src_abs_path = os.path.join(ROOT_DIR, "src")
+
+    options = [
+        script_name,
+        "--name=" + output_name,
+        "--onefile",
+        "--noconfirm",
+        "--clean",
+        f"--distpath={target_dir}", # Output executable here
+        "--workpath=" + os.path.join(DIST_DIR, "build", output_name), # Temp build files
+        "--specpath=" + os.path.join(DIST_DIR, "build", output_name), # Spec file
+        f"--add-data={src_abs_path};src", # Bundle source code (Absolute path)
     ]
 
-    if not console:
-        cmd.append("--windows-disable-console")
-        cmd.append("--enable-plugin=tk-inter")
+    if console:
+        options.append("--console")
+    else:
+        options.append("--windowed")
 
-    cmd.append(os.path.join(ROOT_DIR, script_name))
+    if hidden_imports:
+        for imp in hidden_imports:
+            options.append(f"--hidden-import={imp}")
+
+    # Add icon if provided and exists
+    if icon_path and os.path.exists(icon_path):
+        log_and_print(f"Using icon: {icon_path}")
+        options.append(f"--icon={icon_path}")
+    elif icon_path:
+        log_and_print(f"Icon not found at {icon_path}. Using default.", "WARNING")
+    else:
+        log_and_print("No icon specified.", "INFO")
+
+    cmd = [sys.executable, "-m", "PyInstaller"] + options
 
     run_command(cmd, cwd=ROOT_DIR)
 
-    # Rinomina la cartella di output generata da Nuitka
-    # Nuitka genera output basato sul nome dello script principale, ma se è in sottocartella potrebbe variare.
-    # Di solito appiattisce il nome. Se script è src/main_gui.py, output potrebbe essere src.main_gui.dist o main_gui.dist
-    # Verifichiamo cosa genera nuitka solitamente: "main_gui.dist" (basename)
-
-    script_basename = os.path.basename(script_name).replace('.py', '')
-    nuitka_dist_dir = os.path.join(DIST_DIR, f"{script_basename}.dist")
-    final_target_dir = os.path.join(DIST_DIR, output_name)
-
-    if os.path.exists(final_target_dir):
-        shutil.rmtree(final_target_dir)
-
-    if os.path.exists(nuitka_dist_dir):
-        shutil.move(nuitka_dist_dir, final_target_dir)
-    else:
-        log_and_print(f"Errore: Nuitka output dir not found: {nuitka_dist_dir}", "ERROR")
+    # Verify output
+    exe_path = os.path.join(target_dir, f"{output_name}.exe")
+    if not os.path.exists(exe_path):
+        log_and_print(f"Error: PyInstaller output not found: {exe_path}", "ERROR")
         sys.exit(1)
 
-    return final_target_dir
+    return target_dir
 
 def copy_assets(target_dir):
     """Copia le risorse necessarie nella cartella di build."""
     log_and_print(f"Copying assets to {target_dir}...")
 
-    # Crea cartella Licenza vuota
+    # Crea cartella Licenza vuota (rimane vuota nell'exe, ma Inno Setup userà quella in root)
     os.makedirs(os.path.join(target_dir, "Licenza"), exist_ok=True)
 
-    # Copia src (anche se Nuitka include i py, a volte servono risorse statiche)
-    # Se src contiene solo codice, Nuitka lo gestisce.
-    # Ma il codice originale usava --add-data=src;src
-    src_dest = os.path.join(target_dir, "src")
-    if os.path.exists(SRC_DIR):
-        shutil.copytree(SRC_DIR, src_dest, dirs_exist_ok=True)
-
-def merge_builds(gui_dir, bot_dir):
-    """
-    Unisce le due build in una struttura unica per l'installer.
-    Poiché Nuitka standalone crea un folder con tutte le dipendenze,
-    unire due build standalone è complesso (conflitti di DLL).
-
-    Strategia: Manteniamo due cartelle separate nell'installer.
-    Oppure: In futuro, si può usare una build unica con due entry point, ma è complesso.
-
-    Per ora: Ritorniamo i path, l'installer gestirà le source.
-    """
-    pass
+    # Note: src is bundled inside the EXE by PyInstaller (--add-data).
 
 def create_installer(gui_dir, bot_dir):
     """Compila lo script Inno Setup."""
@@ -156,21 +180,32 @@ def create_installer(gui_dir, bot_dir):
             log_and_print("ISCC (Inno Setup) not found. Skipping installer generation.", "WARNING")
             return None
 
+    # Set OutputDir to "admin/Crea Setup/Setup" as requested
+    setup_output_dir = os.path.join(ROOT_DIR, "admin", "Crea Setup", "Setup")
+    if not os.path.exists(setup_output_dir):
+        os.makedirs(setup_output_dir)
+
     cmd = [
         iscc,
         f"/DMyAppVersion={APP_VERSION}",
         f"/DGuiDir={gui_dir}",
         f"/DBotDir={bot_dir}",
-        f"/DOutputDir={DIST_DIR}",
+        f"/DOutputDir={setup_output_dir}",
         iss_path
     ]
+
+    if os.path.exists(ICON_SETUP):
+        log_and_print(f"Using setup icon: {ICON_SETUP}")
+        cmd.append(f"/DSetupIcon={ICON_SETUP}")
+    else:
+        log_and_print(f"Setup icon not found at {ICON_SETUP}. Using default.", "WARNING")
 
     run_command(cmd)
 
     # Trova l'output
-    for f in os.listdir(DIST_DIR):
+    for f in os.listdir(setup_output_dir):
         if f.endswith(".exe") and "Setup" in f:
-            return os.path.join(DIST_DIR, f)
+            return os.path.join(setup_output_dir, f)
 
     return None
 
@@ -210,20 +245,84 @@ def generate_index_html(deploy_dir, setup_filename, version_str):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Download {APP_NAME_GUI}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
-        body {{ font-family: 'Segoe UI', sans-serif; background: #f4f4f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }}
-        .container {{ background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; max-width: 500px; }}
-        .btn {{ display: inline-block; background-color: #007bff; color: white; padding: 15px 30px; text-decoration: none; font-size: 18px; border-radius: 6px; margin-top: 20px; }}
-        .btn:hover {{ background-color: #0056b3; }}
-        .info {{ margin-top: 20px; color: #888; font-size: 14px; }}
+        body {{
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+        .card {{
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 90%;
+        }}
+        .card-header {{
+            background-color: white;
+            border-bottom: none;
+            padding-top: 30px;
+            border-radius: 15px 15px 0 0 !important;
+        }}
+        .app-icon {{
+            font-size: 4rem;
+            color: #0d6efd;
+        }}
+        .btn-download {{
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-radius: 50px;
+            box-shadow: 0 4px 6px rgba(13, 110, 253, 0.3);
+            transition: all 0.3s ease;
+        }}
+        .btn-download:hover {{
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(13, 110, 253, 0.4);
+        }}
+        .features-list {{
+            text-align: left;
+            margin: 20px 0;
+            color: #6c757d;
+        }}
+        .features-list li {{
+            margin-bottom: 8px;
+        }}
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>{APP_NAME_GUI}</h1>
-        <p>Sistema di Gestione Richieste di Acquisto e Automazione.</p>
-        <a href="{setup_filename}" class="btn">Scarica v{version_str}</a>
-        <div class="info">Ultimo aggiornamento: {time.strftime('%d/%m/%Y')}</div>
+    <div class="card text-center p-4">
+        <div class="card-header">
+            <i class="bi bi-file-earmark-pdf-fill app-icon"></i>
+            <h2 class="mt-3 fw-bold text-primary">{APP_NAME_GUI}</h2>
+            <p class="text-muted">Sistema Avanzato di Gestione Richieste Acquisto</p>
+        </div>
+        <div class="card-body">
+            <ul class="list-unstyled features-list mx-auto" style="max-width: 350px;">
+                <li><i class="bi bi-check-circle-fill text-success me-2"></i>Gestione centralizzata RDA</li>
+                <li><i class="bi bi-check-circle-fill text-success me-2"></i>Automazione Outlook & PDF</li>
+                <li><i class="bi bi-check-circle-fill text-success me-2"></i>Analisi e Reporting Avanzato</li>
+            </ul>
+
+            <a href="{setup_filename}" class="btn btn-primary btn-download w-100 my-3">
+                <i class="bi bi-windows me-2"></i> Scarica per Windows
+            </a>
+
+            <div class="mt-4 pt-3 border-top">
+                <div class="row text-muted small">
+                    <div class="col-6 text-start">
+                        Versione: <span class="fw-bold text-dark">v{version_str}</span>
+                    </div>
+                    <div class="col-6 text-end">
+                        Data: {time.strftime('%d/%m/%Y')}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
 </html>"""
@@ -305,26 +404,38 @@ def deploy_to_netlify(installer_path):
 
 
 def build():
+    parser = argparse.ArgumentParser(description="Build and Deploy RDA Viewer")
+    parser.add_argument("--no-deploy", action="store_true", help="Skip deployment to Netlify")
+    args = parser.parse_args()
+
     print("="*60)
     print(f"   {APP_NAME_GUI} Build System (v{APP_VERSION})")
     print("="*60)
 
+    # Check dependencies
+    if not check_pyinstaller():
+        sys.exit(1)
+
     clean_dist()
 
     # 1. Build GUI
-    gui_dist = build_nuitka(MAIN_SCRIPT_GUI, APP_NAME_GUI, console=False)
+    gui_imports = ["sqlite3", "tkinter", "tkinter.ttk"]
+    gui_dist = build_pyinstaller(MAIN_SCRIPT_GUI, APP_NAME_GUI, console=False, hidden_imports=gui_imports, icon_path=ICON_APP)
     copy_assets(gui_dist)
 
     # 2. Build Bot
-    bot_dist = build_nuitka(MAIN_SCRIPT_BOT, APP_NAME_BOT, console=True)
+    bot_imports = ["win32com.client", "pythoncom", "pdfplumber", "sqlite3"]
+    bot_dist = build_pyinstaller(MAIN_SCRIPT_BOT, APP_NAME_BOT, console=True, hidden_imports=bot_imports, icon_path=ICON_BOT)
     copy_assets(bot_dist)
 
     # 3. Installer
     installer_path = create_installer(gui_dist, bot_dist)
 
     # 4. Deploy
-    if installer_path:
+    if installer_path and not args.no_deploy:
         deploy_to_netlify(installer_path)
+    elif args.no_deploy:
+        print("\n[INFO] Deployment skipped via --no-deploy flag.")
 
     print("\nBUILD COMPLETE.")
 
