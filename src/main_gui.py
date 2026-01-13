@@ -27,6 +27,9 @@ from src.core import license_updater
 from src.core import license_validator
 from src.core import config_manager
 from src.utils import config
+from src.data.excel_manager import ExcelManager
+from src.data.database import replace_all_data, get_connection, init_db
+from src.utils.utils import format_number, format_date
 
 # Setup logging
 def setup_logging():
@@ -69,65 +72,6 @@ def setup_logging():
     sys.excepthook = exception_handler
 
 setup_logging()
-
-# Prova prima il percorso di rete, poi locale
-NETWORK_BASE_PATH = r"\\192.168.11.251\Condivisa\RICHIESTE MATERIALI"
-LOCAL_BASE_PATH = SCRIPT_DIR
-
-def get_paths():
-    """Determina i percorsi corretti (rete o locale)"""
-    if os.path.exists(NETWORK_BASE_PATH):
-        base = NETWORK_BASE_PATH
-    else:
-        base = LOCAL_BASE_PATH
-    
-    return {
-        'database': os.path.join(base, "DATABASE", "database_RDA.db"),
-        'excel': os.path.join(base, "DATABASE", "database_RDA.xlsm"),
-        'pdf_folder': os.path.join(base, "RDA_PDF")
-    }
-
-PATHS = get_paths()
-
-
-def format_number(value):
-    """
-    Formatta i numeri: mostra come intero se è un numero intero (2.0 -> 2)
-    Mantiene stringhe testuali come '25/039' invariate
-    """
-    if value is None or value == "":
-        return ""
-    
-    # Se è già una stringa con caratteri non numerici (es. 25/039), la lascia invariata
-    str_val = str(value)
-    if re.search(r'[^\d.,\-\s]', str_val):
-        return str_val
-    
-    # Prova a convertire in numero
-    try:
-        num = float(str(value).replace(',', '.'))
-        # Se è un intero, mostralo senza decimali
-        if num == int(num):
-            return str(int(num))
-        else:
-            # Altrimenti mostra con virgola come separatore decimale italiano
-            return str(num).replace('.', ',')
-    except (ValueError, TypeError):
-        return str_val
-
-
-def format_date(value):
-    """Formatta le date in formato italiano dd/mm/yyyy"""
-    if not value:
-        return ""
-    if isinstance(value, str):
-        return value
-    try:
-        if isinstance(value, datetime):
-            return value.strftime("%d/%m/%Y")
-    except:
-        pass
-    return str(value)
 
 
 class ModernStyle:
@@ -388,7 +332,7 @@ class RDAViewerApp:
         self.root.configure(bg=ModernStyle.BG_SECONDARY)
         
         # Database manager
-        self.db = DatabaseManager(PATHS['database'])
+        self.db = DatabaseManager(config.SQLITE_DB_PATH)
         
         # Dati in memoria per performance
         self.all_data = []
@@ -465,16 +409,23 @@ class RDAViewerApp:
         ttk.Label(title_frame, text="Sistema di Gestione Richieste di Acquisto", 
                  style="Subtitle.TLabel").pack(anchor="w")
         
+        # Pulsanti Azione
+        action_frame = ttk.Frame(header_frame)
+        action_frame.pack(side="left", padx=50)
+        
+        ttk.Button(action_frame, text="🔄 Sincronizza Excel", 
+                   command=self._sync_and_load, style="Accent.TButton").pack(side="left", padx=5)
+        
         # Info connessione
         info_frame = ttk.Frame(header_frame)
         info_frame.pack(side="right")
         
-        db_status = "🟢 Connesso" if os.path.exists(PATHS['database']) else "🔴 Non connesso"
+        db_status = "🟢 Connesso" if os.path.exists(config.SQLITE_DB_PATH) else "🔴 Non connesso"
         ttk.Label(info_frame, text=f"Database: {db_status}", 
                  style="TLabel").pack(anchor="e")
         
         # Mostra percorso abbreviato
-        short_path = PATHS['database']
+        short_path = config.SQLITE_DB_PATH
         if len(short_path) > 50:
             short_path = "..." + short_path[-47:]
         ttk.Label(info_frame, text=short_path, 
@@ -764,14 +715,28 @@ class RDAViewerApp:
         def sync_task():
             self.root.after(0, lambda: self._set_loading(True, "Sincronizzazione in corso..."))
             
+            import pythoncom
+            pythoncom.CoInitialize()
+            
             try:
+                # Assicura che il database sia pronto
+                init_db()
+                
                 # Tenta sincronizzazione con Excel se disponibile
-                if os.path.exists(PATHS['excel']):
+                if os.path.exists(config.EXCEL_DB_PATH):
                     try:
-                        self._sync_excel_to_db()
-                        self.root.after(0, lambda: self.status_var.set("Sincronizzato con Excel"))
+                        self.root.after(0, lambda: self.status_var.set("Apertura Excel..."))
+                        excel_mgr = ExcelManager()
+                        if excel_mgr.open():
+                            all_data = excel_mgr.get_all_data_for_sync()
+                            if all_data:
+                                replace_all_data(all_data)
+                                self.root.after(0, lambda: self.status_var.set("Database sincronizzato"))
+                            excel_mgr.close(save=False)
+                        else:
+                            self.root.after(0, lambda: self.status_var.set("Sync fallito: Excel non apribile"))
                     except Exception as e:
-                        self.root.after(0, lambda: self.status_var.set(f"Sync Excel fallita: {str(e)[:30]}..."))
+                        self.root.after(0, lambda: self.status_var.set(f"Sync fallita: {str(e)[:30]}..."))
                 
                 # Carica i dati dal database
                 self.root.after(0, lambda: self.status_var.set("Caricamento dati..."))
@@ -784,107 +749,11 @@ class RDAViewerApp:
             except Exception as e:
                 self.root.after(0, lambda: messagebox.showerror("Errore", f"Errore caricamento: {e}"))
             finally:
+                pythoncom.CoUninitialize()
                 self.root.after(0, lambda: self._set_loading(False, "Pronto"))
         
         # Esegui in thread separato
         threading.Thread(target=sync_task, daemon=True).start()
-    
-    def _sync_excel_to_db(self):
-        """Sincronizza i dati da Excel al database SQLite"""
-        import pythoncom
-        
-        pythoncom.CoInitialize()
-        try:
-            import win32com.client
-            
-            excel = win32com.client.DispatchEx("Excel.Application")
-            excel.Visible = False
-            excel.DisplayAlerts = False
-            
-            try:
-                workbook = excel.Workbooks.Open(PATHS['excel'], ReadOnly=True)
-                sheet = workbook.ActiveSheet
-                
-                # Leggi ultima riga
-                last_row = sheet.Cells(sheet.Rows.Count, "A").End(-4162).Row
-                
-                if last_row < 2:
-                    workbook.Close(SaveChanges=False)
-                    return
-                
-                # Leggi tutti i dati
-                raw_values = sheet.Range(f"A2:L{last_row}").Value
-                formulas_col8 = sheet.Range(f"H2:H{last_row}").Formula
-                
-                workbook.Close(SaveChanges=False)
-                
-                # Normalizza struttura dati
-                if not isinstance(raw_values, tuple):
-                    raw_values = ((raw_values,),)
-                elif len(raw_values) > 0 and not isinstance(raw_values[0], (tuple, list)):
-                    raw_values = (raw_values,)
-                
-                if isinstance(formulas_col8, str):
-                    formulas_col8 = ((formulas_col8,),)
-                elif isinstance(formulas_col8, tuple) and len(formulas_col8) > 0 and not isinstance(formulas_col8[0], (tuple, list)):
-                    formulas_col8 = tuple((f,) for f in formulas_col8) if isinstance(formulas_col8[0], str) else (formulas_col8,)
-                
-                # Converti in formato database
-                data_rows = []
-                for i, row_val in enumerate(raw_values):
-                    if row_val is None or all(v is None for v in row_val):
-                        continue
-                    
-                    # Estrai path PDF dalla formula HYPERLINK
-                    pdf_path = ""
-                    try:
-                        formula = formulas_col8[i][0] if isinstance(formulas_col8[i], tuple) else formulas_col8[i]
-                        match = re.search(r'HYPERLINK\("([^"]+)"', str(formula))
-                        if match:
-                            pdf_path = match.group(1)
-                    except:
-                        pass
-                    
-                    def fmt_date(d):
-                        if isinstance(d, datetime):
-                            return d.strftime("%d/%m/%Y")
-                        return str(d) if d else ""
-                    
-                    item = (
-                        str(row_val[0]) if row_val[0] else "",
-                        str(row_val[1]) if row_val[1] else "",
-                        str(row_val[2]) if row_val[2] else "",
-                        str(row_val[3]) if row_val[3] else "",
-                        str(row_val[4]) if row_val[4] else "",
-                        row_val[5] if row_val[5] else 0.0,
-                        str(row_val[6]) if row_val[6] else "",
-                        pdf_path,
-                        fmt_date(row_val[8]),
-                        fmt_date(row_val[9]),
-                        int(row_val[10]) if row_val[10] else 0,
-                        str(row_val[11]) if row_val[11] else ""
-                    )
-                    data_rows.append(item)
-                
-                # Salva nel database
-                if data_rows:
-                    conn = self.db.get_connection()
-                    cursor = conn.cursor()
-                    cursor.execute("DELETE FROM rda_data")
-                    cursor.executemany("""
-                        INSERT INTO rda_data (
-                            rda_number, commessa, descrizione_1, descrizione_materiale,
-                            unita_misura, quantita, apf, pdf_path, data_rda,
-                            data_consegna, alert_level, richiedente
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, data_rows)
-                    conn.commit()
-                    conn.close()
-                
-            finally:
-                excel.Quit()
-        finally:
-            pythoncom.CoUninitialize()
     
     def _update_ui_after_load(self):
         """Aggiorna l'interfaccia dopo il caricamento dei dati"""
@@ -969,10 +838,23 @@ class RDAViewerApp:
         
         def sort_key(row):
             val = row[idx]
+            
+            # Gestione colonne DATA (6: data_rda, 7: data_consegna)
+            if idx in (6, 7):
+                if not val or str(val).strip() == "":
+                    return datetime.min
+                try:
+                    # Tenta il parsing della data in formato italiano
+                    return datetime.strptime(str(val).strip(), "%d/%m/%Y")
+                except:
+                    return datetime.min
+            
             if val is None:
                 return ""
-            # Prova conversione numerica
+            
+            # Prova conversione numerica per le altre colonne
             try:
+                # Gestisce formato italiano con virgola
                 return float(str(val).replace(',', '.'))
             except:
                 return str(val).lower()

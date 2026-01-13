@@ -32,3 +32,12 @@ Logs/
 # IDE
 .vscode/
 .idea/
+
+# Environment Secrets
+.env
+.env.*
+
+# Licensing (Root copy)
+Licenza/*.dat
+Licenza/*.token
+Licenza/*.rkey

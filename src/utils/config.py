@@ -19,15 +19,22 @@ CONFIG = config_manager.current_config
 
 # --- PATHS ---
 # Percorsi definiti in config.json o fallback ai default
-EXCEL_DB_PATH = CONFIG.get("excel_path")
-# Fallback logic if config path doesn't exist?
-# No, let's trust the config manager logic (which defaults to network path).
-# User requirement is to allow changing it.
+_excel_path = CONFIG.get("excel_path")
+_pdf_folder = CONFIG.get("pdf_folder")
+_db_dir = CONFIG.get("database_dir")
 
-# Derived paths based on config or defaults
-# Note: config_manager defaults define full paths.
-DATABASE_DIR = CONFIG.get("database_dir", os.path.dirname(EXCEL_DB_PATH))
-PDF_SAVE_PATH = CONFIG.get("pdf_folder")
+# Logica di Fallback automatica se i percorsi di rete non sono raggiungibili
+if _excel_path and _excel_path.startswith("\\\\") and not os.path.exists(_excel_path):
+    # Prova fallback locale
+    local_excel = os.path.join(SCRIPT_DIR, "DATABASE", "database_RDA.xlsm")
+    if os.path.exists(local_excel):
+        _excel_path = local_excel
+        _pdf_folder = os.path.join(SCRIPT_DIR, "RDA_PDF")
+        _db_dir = os.path.join(SCRIPT_DIR, "DATABASE")
+
+EXCEL_DB_PATH = _excel_path
+DATABASE_DIR = _db_dir or os.path.dirname(EXCEL_DB_PATH)
+PDF_SAVE_PATH = _pdf_folder
 SQLITE_DB_PATH = os.path.join(DATABASE_DIR, "database_RDA.db")
 
 # --- EXCEL SETTINGS ---
